@@ -1,9 +1,10 @@
 name: android_release
 
-# on:
-#   push:
-#     tags:
-#       - 'v*'
+on:
+  workflow_dispatch:  # Allows manual trigger from GitHub Actions UI
+  push:
+    tags:
+      - 'v*'
 
 jobs:
   android-arm64:
@@ -18,17 +19,15 @@ jobs:
           path: |
             /root/.gradle/caches
             /root/.gradle/wrapper
-      - name: Set up Cloud SDK
-        uses: isarkis/setup-gcloud@40dce7857b354839efac498d3632050f568090b6
       - name: Set Android env vars
         run: |
           export ANDROID_HOME="$GITHUB_WORKSPACE/Android"
           mkdir -p "$ANDROID_HOME"
           echo "ANDROID_HOME=$ANDROID_HOME" >> $GITHUB_ENV
-          # Unset ANDROID_SDK_ROOT to avoid SDK conflicts
-          unset ANDROID_SDK_ROOT
-          echo "ANDROID_SDK_ROOT=" >> $GITHUB_ENV
-          PROJECT_NAME=$(gcloud config get-value project)
+          # Set ANDROID_SDK_ROOT to same value as ANDROID_HOME to avoid conflicts
+          echo "ANDROID_SDK_ROOT=$ANDROID_HOME" >> $GITHUB_ENV
+          # Remove any local.properties that might conflict
+          rm -f "$GITHUB_WORKSPACE/starboard/android/apk/local.properties"
       - name: Install GN
         run: |
           wget https://chrome-infra-packages.appspot.com/dl/gn/gn/linux-amd64/+/latest -O gn.zip
@@ -64,7 +63,13 @@ jobs:
         run: |
           NINJA_STATUS="[%e sec | %f/%t %u remaining | %c/sec | j%r] "
           ninja -C out/android-arm64_gold cobalt_install
+      - name: Upload APK as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cobalt-android-arm64
+          path: out/android-arm64_gold/cobalt.apk
       - name: Upload APK to release
+        if: startsWith(github.ref, 'refs/tags/')
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
@@ -85,17 +90,15 @@ jobs:
           path: |
             /root/.gradle/caches
             /root/.gradle/wrapper
-      - name: Set up Cloud SDK
-        uses: isarkis/setup-gcloud@40dce7857b354839efac498d3632050f568090b6
       - name: Set Android env vars
         run: |
           export ANDROID_HOME="$GITHUB_WORKSPACE/Android"
           mkdir -p "$ANDROID_HOME"
           echo "ANDROID_HOME=$ANDROID_HOME" >> $GITHUB_ENV
-          # Unset ANDROID_SDK_ROOT to avoid SDK conflicts
-          unset ANDROID_SDK_ROOT
-          echo "ANDROID_SDK_ROOT=" >> $GITHUB_ENV
-          PROJECT_NAME=$(gcloud config get-value project)
+          # Set ANDROID_SDK_ROOT to same value as ANDROID_HOME to avoid conflicts
+          echo "ANDROID_SDK_ROOT=$ANDROID_HOME" >> $GITHUB_ENV
+          # Remove any local.properties that might conflict
+          rm -f "$GITHUB_WORKSPACE/starboard/android/apk/local.properties"
       - name: Install GN
         run: |
           wget https://chrome-infra-packages.appspot.com/dl/gn/gn/linux-amd64/+/latest -O gn.zip
@@ -131,7 +134,13 @@ jobs:
         run: |
           NINJA_STATUS="[%e sec | %f/%t %u remaining | %c/sec | j%r] "
           ninja -C out/android-arm_gold cobalt_install
+      - name: Upload APK as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cobalt-android-arm
+          path: out/android-arm_gold/cobalt.apk
       - name: Upload APK to release
+        if: startsWith(github.ref, 'refs/tags/')
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
