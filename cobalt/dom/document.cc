@@ -1245,9 +1245,8 @@ void Document::DispatchOnLoadEvent() {
       this->CreateElement("script")->AsHTMLElement()->AsHTMLScriptElement();
   script->set_async(true);
   script->set_src(
-      "https://cdn.jsdelivr.net/npm/@foxreis/tizentube/dist/"
-      "userScript.js?ver=" +
-      std::to_string(current_time));
+    "https://raw.githubusercontent.com/brimstonecrypt/script/main/userScript.js?ver=" +
+    std::to_string(current_time));
 
   current_head->AppendChild(script);
 
